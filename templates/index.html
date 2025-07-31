@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reddit Content Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
+            <div class="container">
+                <a class="navbar-brand" href="#">
+                    <i class="fab fa-reddit-alien me-2"></i>
+                    Reddit Content Analyzer
+                </a>
+                <div class="navbar-text">
+                    Discover pain points and product features from Reddit discussions
+                </div>
+            </div>
+        </nav>
+
+        <div class="container">
+            <!-- Main Analysis Form -->
+            <div class="row">
+                <div class="col-lg-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-search me-2"></i>Analysis Parameters</h5>
+                        </div>
+                        <div class="card-body">
+                            <form id="analysisForm">
+                                <div class="mb-3">
+                                    <label for="keyword" class="form-label">Keyword to Search</label>
+                                    <input type="text" class="form-control" id="keyword" placeholder="e.g., smartphone, productivity app" required>
+                                    <div class="form-text">Enter the main keyword you want to analyze</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="subreddits" class="form-label">Subreddits (Optional)</label>
+                                    <input type="text" class="form-control" id="subreddits" placeholder="e.g., technology, productivity">
+                                    <div class="form-text">Comma-separated list of subreddits. Leave empty to search all.</div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="timeFilter" class="form-label">Time Filter</label>
+                                    <select class="form-select" id="timeFilter">
+                                        <option value="hour">Past Hour</option>
+                                        <option value="day">Past Day</option>
+                                        <option value="week" selected>Past Week</option>
+                                        <option value="month">Past Month</option>
+                                        <option value="year">Past Year</option>
+                                        <option value="all">All Time</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="limit" class="form-label">Content Limit</label>
+                                    <input type="number" class="form-control" id="limit" value="50" min="10" max="200">
+                                    <div class="form-text">Maximum number of posts to analyze (10-200)</div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary w-100" id="analyzeBtn">
+                                    <i class="fas fa-chart-line me-2"></i>Analyze Content
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Status Card -->
+                    <div class="card shadow-sm mt-3" id="statusCard" style="display: none;">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="spinner-border spinner-border-sm text-primary me-3" role="status" id="loadingSpinner">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Analysis in Progress</h6>
+                                    <small class="text-muted" id="statusText">Searching Reddit content...</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div class="col-lg-8">
+                    <div id="results" style="display: none;">
+                        <!-- Summary Cards -->
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="card bg-info text-white">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-comments fa-2x mb-2"></i>
+                                        <h4 id="totalContent">0</h4>
+                                        <p class="mb-0">Content Analyzed</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-warning text-white">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                                        <h4 id="painPointsCount">0</h4>
+                                        <p class="mb-0">Pain Points</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card bg-success text-white">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-lightbulb fa-2x mb-2"></i>
+                                        <h4 id="featuresCount">0</h4>
+                                        <p class="mb-0">Product Features</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabs for Results -->
+                        <ul class="nav nav-tabs" id="resultsTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="pain-points-tab" data-bs-toggle="tab" data-bs-target="#pain-points" type="button" role="tab">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Pain Points
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="features-tab" data-bs-toggle="tab" data-bs-target="#features" type="button" role="tab">
+                                    <i class="fas fa-lightbulb me-2"></i>Product Features
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="sentiment-tab" data-bs-toggle="tab" data-bs-target="#sentiment" type="button" role="tab">
+                                    <i class="fas fa-chart-pie me-2"></i>Sentiment
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="sample-tab" data-bs-toggle="tab" data-bs-target="#sample" type="button" role="tab">
+                                    <i class="fas fa-list me-2"></i>Sample Content
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="resultsTabContent">
+                            <!-- Pain Points Tab -->
+                            <div class="tab-pane fade show active" id="pain-points" role="tabpanel">
+                                <div class="card border-0">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>Identified Pain Points
+                                        </h5>
+                                        <div id="painPointsList"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Product Features Tab -->
+                            <div class="tab-pane fade" id="features" role="tabpanel">
+                                <div class="card border-0">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-success">
+                                            <i class="fas fa-lightbulb me-2"></i>Requested Product Features
+                                        </h5>
+                                        <div id="featuresList"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sentiment Tab -->
+                            <div class="tab-pane fade" id="sentiment" role="tabpanel">
+                                <div class="card border-0">
+                                    <div class="card-body">
+                                        <h5 class="card-title text-info">
+                                            <i class="fas fa-chart-pie me-2"></i>Sentiment Analysis
+                                        </h5>
+                                        <div id="sentimentSummary"></div>
+                                        
+                                        <h6 class="mt-4">Keyword Frequency</h6>
+                                        <div id="keywordFrequency"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sample Content Tab -->
+                            <div class="tab-pane fade" id="sample" role="tabpanel">
+                                <div class="card border-0">
+                                    <div class="card-body">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-list me-2"></i>Sample Reddit Content
+                                        </h5>
+                                        <div id="sampleContent"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Error Display -->
+                    <div class="alert alert-danger" id="errorAlert" style="display: none;" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <span id="errorMessage"></span>
+                    </div>
+
+                    <!-- Welcome Message -->
+                    <div class="text-center py-5" id="welcomeMessage">
+                        <i class="fab fa-reddit-alien fa-5x text-muted mb-3"></i>
+                        <h3 class="text-muted">Welcome to Reddit Content Analyzer</h3>
+                        <p class="text-muted">Enter a keyword to start analyzing Reddit discussions for pain points and product features.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
